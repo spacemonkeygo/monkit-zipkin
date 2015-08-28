@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	monhttp = monitor.PackageNamed("http")
+	httpclient = monitor.PackageNamed("http.client")
+	httpserver = monitor.PackageNamed("http.server")
 )
 
 // client stuff -----
@@ -38,7 +39,7 @@ type Client interface {
 // Compare to http.Client.Do.
 func TraceRequest(ctx context.Context, cl Client, req *http.Request) (
 	resp *http.Response, err error) {
-	defer monhttp.TaskNamed(req.Method)(&ctx)(&err)
+	defer httpclient.TaskNamed(req.Method)(&ctx)(&err)
 	s := monitor.SpanFromCtx(ctx)
 	s.Annotate("http.uri", req.URL.String())
 	RequestFromSpan(s).SetHeader(req.Header)
@@ -58,7 +59,7 @@ func TraceHandler(c ContextHTTPHandler) ContextHTTPHandler {
 	return ContextHTTPHandlerFunc(func(
 		ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		trace, spanId := RequestFromHeader(r.Header).Trace()
-		defer monhttp.FuncNamed(r.Method).RemoteTrace(&ctx, spanId, trace)(nil)
+		defer httpserver.FuncNamed(r.Method).RemoteTrace(&ctx, spanId, trace)(nil)
 		s := monitor.SpanFromCtx(ctx)
 		s.Annotate("http.uri", r.RequestURI)
 		wrapped := &responseWriterObserver{w: w}
