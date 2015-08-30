@@ -57,9 +57,18 @@ func RegisterZipkin(reg *monitor.Registry, collector TraceCollector,
 				flags = flags | 1
 			}
 			t.Set(flagsKey, flags)
-			t.ObserveSpans(opts.observeSpan)
+			t.ObserveSpans(spanFinishObserverFunc(opts.observeSpan))
 		}
 	})
+}
+
+type spanFinishObserverFunc func(s *monitor.Span, err error, panicked bool,
+	finish time.Time)
+
+func (f spanFinishObserverFunc) Start(*monitor.Span) {}
+func (f spanFinishObserverFunc) Finish(s *monitor.Span, err error,
+	panicked bool, finish time.Time) {
+	f(s, err, panicked, finish)
 }
 
 func getParentId(s *monitor.Span) (parent_id *int64, server bool) {
