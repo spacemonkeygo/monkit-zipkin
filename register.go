@@ -102,26 +102,30 @@ func (opts Options) observeSpan(s *monitor.Span, err error, panicked bool,
 
 	annotations := s.Annotations()
 	args := s.Args()
-	zs.Annotations = make([]*zipkin.Annotation, 0,
-		3+len(annotations)+len(args))
+
+	zs.Annotations = make([]*zipkin.Annotation, 0, 4)
+	zs.BinaryAnnotations = make([]*zipkin.BinaryAnnotation, 0,
+		len(annotations)+len(args)+1)
 
 	zs.Annotations = append(zs.Annotations, &zipkin.Annotation{
 		Timestamp: s.Start().UnixNano() / 1000,
 		Value:     start_name,
 		Host:      opts.LocalHost})
 	for arg_idx, arg := range args {
-		zs.BinaryAnnotations = []*zipkin.BinaryAnnotation{{
-			Key:            fmt.Sprintf("arg_%d", arg_idx),
-			Value:          []byte(arg),
-			AnnotationType: zipkin.AnnotationType_STRING,
-			Host:           opts.LocalHost}}
+		zs.BinaryAnnotations = append(zs.BinaryAnnotations,
+			&zipkin.BinaryAnnotation{
+				Key:            fmt.Sprintf("arg_%d", arg_idx),
+				Value:          []byte(arg),
+				AnnotationType: zipkin.AnnotationType_STRING,
+				Host:           opts.LocalHost})
 	}
 	for _, annotation := range annotations {
-		zs.BinaryAnnotations = []*zipkin.BinaryAnnotation{{
-			Key:            annotation.Name,
-			Value:          []byte(annotation.Value),
-			AnnotationType: zipkin.AnnotationType_STRING,
-			Host:           opts.LocalHost}}
+		zs.BinaryAnnotations = append(zs.BinaryAnnotations,
+			&zipkin.BinaryAnnotation{
+				Key:            annotation.Name,
+				Value:          []byte(annotation.Value),
+				AnnotationType: zipkin.AnnotationType_STRING,
+				Host:           opts.LocalHost})
 	}
 	if panicked {
 		zs.Annotations = append(zs.Annotations, &zipkin.Annotation{
@@ -137,11 +141,12 @@ func (opts Options) observeSpan(s *monitor.Span, err error, panicked bool,
 			Timestamp: finish.UnixNano() / 1000,
 			Value:     "failed",
 			Host:      opts.LocalHost})
-		zs.BinaryAnnotations = []*zipkin.BinaryAnnotation{{
-			Key:            "error",
-			Value:          []byte(errors.GetClass(err).String()),
-			AnnotationType: zipkin.AnnotationType_STRING,
-			Host:           opts.LocalHost}}
+		zs.BinaryAnnotations = append(zs.BinaryAnnotations,
+			&zipkin.BinaryAnnotation{
+				Key:            "error",
+				Value:          []byte(errors.GetClass(err).String()),
+				AnnotationType: zipkin.AnnotationType_STRING,
+				Host:           opts.LocalHost})
 	}
 	zs.Annotations = append(zs.Annotations, &zipkin.Annotation{
 		Timestamp: finish.UnixNano() / 1000,
