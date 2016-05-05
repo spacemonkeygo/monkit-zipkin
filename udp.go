@@ -15,6 +15,7 @@
 package zipkin
 
 import (
+	"log"
 	"net"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -62,7 +63,10 @@ func (c *UDPCollector) handle() {
 			if !ok {
 				return
 			}
-			logger.Errore(c.send(s))
+			err := c.send(s)
+			if err != nil {
+				log.Printf("failed write: %v", err)
+			}
 		}
 	}
 }

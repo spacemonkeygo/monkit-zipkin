@@ -17,17 +17,13 @@ package zipkin
 import (
 	"encoding/base64"
 	"errors"
+	"log"
 	"net"
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"github.com/spacemonkeygo/spacelog"
 	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/scribe"
 	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/zipkin"
-)
-
-var (
-	logger = spacelog.GetLogger()
 )
 
 // ScribeCollector matches the TraceCollector interface, but writes directly
@@ -75,14 +71,14 @@ func (s *ScribeCollector) pumpWrites() {
 
 		conn, err := newScribeConn(s.addr)
 		if err != nil {
-			logger.Errorf("connect error: %s", err)
+			log.Printf("connect error: %s", err)
 			backoff++
 			continue
 		}
 
 		err = writeAll(conn, s.logs, s.done)
 		if err != nil {
-			logger.Errorf("write error: %s", err)
+			log.Printf("write error: %s", err)
 		}
 
 		backoff = 0
@@ -93,8 +89,8 @@ func (s *ScribeCollector) pumpWrites() {
 func writeAll(c *scribeConn, logs <-chan *scribe.LogEntry, done <-chan struct{}) error {
 	for {
 		select {
-		case log := <-logs:
-			rc, err := c.client.Log([]*scribe.LogEntry{log})
+		case l := <-logs:
+			rc, err := c.client.Log([]*scribe.LogEntry{l})
 			if err != nil {
 				return err
 			}
@@ -102,7 +98,7 @@ func writeAll(c *scribeConn, logs <-chan *scribe.LogEntry, done <-chan struct{})
 			// Non-OK responses are logged but not fatal
 			// for the connection.
 			if rc != scribe.ResultCode_OK {
-				logger.Errorf("scribe result code not OK: %s", rc)
+				log.Printf("scribe result code not OK: %s", rc)
 			}
 		case <-done:
 			return nil
@@ -140,9 +136,12 @@ func (c *ScribeCollector) Collect(s *zipkin.Span) {
 	p := thrift.NewTBinaryProtocolTransport(t)
 	err := s.Write(p)
 	if err != nil {
-		logger.Errore(err)
-	} else {
-		logger.Errore(c.CollectSerialized(t.Buffer.Bytes()))
+		log.Printf("failed write: %v", err)
+		return
+	}
+	err = c.CollectSerialized(t.Buffer.Bytes())
+	if err != nil {
+		log.Printf("failed collect: %v", err)
 	}
 }
 
