@@ -23,8 +23,8 @@ import (
 )
 
 var (
-	httpclient = monitor.PackageNamed("http.client")
-	httpserver = monitor.PackageNamed("http.server")
+	httpclient = monitor.ScopeNamed("http.client")
+	httpserver = monitor.ScopeNamed("http.server")
 )
 
 // client stuff -----
