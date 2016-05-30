@@ -86,7 +86,8 @@ func (s *ScribeCollector) pumpWrites() {
 }
 
 // writeAll sends all logs to c, stopping when done is signaled.
-func writeAll(c *scribeConn, logs <-chan *scribe.LogEntry, done <-chan struct{}) error {
+func writeAll(c *scribeConn, logs <-chan *scribe.LogEntry,
+	done <-chan struct{}) error {
 	for {
 		select {
 		case l := <-logs:

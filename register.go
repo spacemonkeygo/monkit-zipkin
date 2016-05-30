@@ -32,13 +32,15 @@ const (
 )
 
 type Options struct {
-	Fraction  float64
-	Debug     bool
-	LocalHost *zipkin.Endpoint
+	Fraction  float64          // The Fraction of traces to observe.
+	Debug     bool             // Whether to set the debug flag on new traces.
+	LocalHost *zipkin.Endpoint // What set as the local zipkin.Endpoint
 
 	collector TraceCollector
 }
 
+// RegisterZipkin configures the given Registry reg to send the Spans from some
+// portion of all new Traces to the given TraceCollector.
 func RegisterZipkin(reg *monitor.Registry, collector TraceCollector,
 	opts Options) {
 	opts.collector = collector

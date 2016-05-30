@@ -19,7 +19,7 @@ import (
 )
 
 // TraceCollector is an interface dealing with completed Spans on a
-// SpanManager. See RegisterTraceCollector.
+// SpanManager. See RegisterZipkin.
 type TraceCollector interface {
 	// Collect gets called with a Span whenever a Span is completed on a
 	// SpanManager.
