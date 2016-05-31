@@ -15,7 +15,7 @@
 package zipkin
 
 import (
-	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/zipkin"
+	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
 )
 
 // TraceCollector is an interface dealing with completed Spans on a

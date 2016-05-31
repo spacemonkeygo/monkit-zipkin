@@ -19,12 +19,12 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
-	"gopkg.in/spacemonkeygo/monitor.v2"
+	"gopkg.in/spacemonkeygo/monkit.v2"
 )
 
 var (
-	httpclient = monitor.ScopeNamed("http.client")
-	httpserver = monitor.ScopeNamed("http.server")
+	httpclient = monkit.ScopeNamed("http.client")
+	httpserver = monkit.ScopeNamed("http.server")
 )
 
 // client stuff -----
@@ -40,7 +40,7 @@ type Client interface {
 func TraceRequest(ctx context.Context, cl Client, req *http.Request) (
 	resp *http.Response, err error) {
 	defer httpclient.TaskNamed(req.Method)(&ctx)(&err)
-	s := monitor.SpanFromCtx(ctx)
+	s := monkit.SpanFromCtx(ctx)
 	s.Annotate("http.uri", req.URL.String())
 	RequestFromSpan(s).SetHeader(req.Header)
 	resp, err = cl.Do(req)
@@ -60,7 +60,7 @@ func TraceHandler(c ContextHTTPHandler) ContextHTTPHandler {
 		ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		trace, spanId := RequestFromHeader(r.Header).Trace()
 		defer httpserver.FuncNamed(r.Method).RemoteTrace(&ctx, spanId, trace)(nil)
-		s := monitor.SpanFromCtx(ctx)
+		s := monkit.SpanFromCtx(ctx)
 		s.Annotate("http.uri", r.RequestURI)
 		wrapped := &responseWriterObserver{w: w}
 		c.ServeHTTP(ctx, wrapped, r)

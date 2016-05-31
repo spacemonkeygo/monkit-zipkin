@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
-	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/zipkin"
-	"gopkg.in/spacemonkeygo/monitor.v2"
+	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
+	"gopkg.in/spacemonkeygo/monkit.v2"
 )
 
 type traceKey int
@@ -41,10 +41,10 @@ type Options struct {
 
 // RegisterZipkin configures the given Registry reg to send the Spans from some
 // portion of all new Traces to the given TraceCollector.
-func RegisterZipkin(reg *monitor.Registry, collector TraceCollector,
+func RegisterZipkin(reg *monkit.Registry, collector TraceCollector,
 	opts Options) {
 	opts.collector = collector
-	reg.ObserveTraces(func(t *monitor.Trace) {
+	reg.ObserveTraces(func(t *monkit.Trace) {
 		sampled, exists := t.Get(sampleKey).(bool)
 		if !exists {
 			sampled = rng.Float64() < opts.Fraction
@@ -64,16 +64,16 @@ func RegisterZipkin(reg *monitor.Registry, collector TraceCollector,
 	})
 }
 
-type spanFinishObserverFunc func(s *monitor.Span, err error, panicked bool,
+type spanFinishObserverFunc func(s *monkit.Span, err error, panicked bool,
 	finish time.Time)
 
-func (f spanFinishObserverFunc) Start(*monitor.Span) {}
-func (f spanFinishObserverFunc) Finish(s *monitor.Span, err error,
+func (f spanFinishObserverFunc) Start(*monkit.Span) {}
+func (f spanFinishObserverFunc) Finish(s *monkit.Span, err error,
 	panicked bool, finish time.Time) {
 	f(s, err, panicked, finish)
 }
 
-func getParentId(s *monitor.Span) (parent_id *int64, server bool) {
+func getParentId(s *monkit.Span) (parent_id *int64, server bool) {
 	parent := s.Parent()
 	if parent != nil {
 		parent_id := parent.Id()
@@ -85,7 +85,7 @@ func getParentId(s *monitor.Span) (parent_id *int64, server bool) {
 	return nil, false
 }
 
-func (opts Options) observeSpan(s *monitor.Span, err error, panicked bool,
+func (opts Options) observeSpan(s *monkit.Span, err error, panicked bool,
 	finish time.Time) {
 	parent_id, server := getParentId(s)
 	zs := &zipkin.Span{

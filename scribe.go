@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/scribe"
-	"gopkg.in/spacemonkeygo/monitor-zipkin.v2/gen-go/zipkin"
+	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/scribe"
+	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
 )
 
 // ScribeCollector matches the TraceCollector interface, but writes directly

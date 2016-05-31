@@ -17,7 +17,7 @@ package zipkin
 import (
 	"strconv"
 
-	"gopkg.in/spacemonkeygo/monitor.v2"
+	"gopkg.in/spacemonkeygo/monkit.v2"
 )
 
 // Request is a structure representing an incoming RPC request. Every field
@@ -70,7 +70,7 @@ func ref(v int64) *int64 {
 	return &v
 }
 
-func RequestFromSpan(s *monitor.Span) Request {
+func RequestFromSpan(s *monkit.Span) Request {
 	trace := s.Trace()
 
 	sampled, ok := trace.Get(sampleKey).(bool)
@@ -115,16 +115,16 @@ func (r Request) SetHeader(header HeaderSetter) {
 	}
 }
 
-func (zipreq Request) Trace() (trace *monitor.Trace, spanId int64) {
+func (zipreq Request) Trace() (trace *monkit.Trace, spanId int64) {
 	if zipreq.TraceId != nil {
-		trace = monitor.NewTrace(*zipreq.TraceId)
+		trace = monkit.NewTrace(*zipreq.TraceId)
 	} else {
-		trace = monitor.NewTrace(monitor.NewId())
+		trace = monkit.NewTrace(monkit.NewId())
 	}
 	if zipreq.SpanId != nil {
 		spanId = *zipreq.SpanId
 	} else {
-		spanId = monitor.NewId()
+		spanId = monkit.NewId()
 	}
 
 	if zipreq.ParentId != nil {
