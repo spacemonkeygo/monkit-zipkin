@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/context"
 	"gopkg.in/spacemonkeygo/monkit.v2"
 )
 
@@ -27,20 +26,13 @@ var (
 	httpserver = monkit.ScopeNamed("http.server")
 )
 
-// client stuff -----
-
 // Client is an interface that matches an http.Client
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// TraceRequest will perform an HTTP request, creating a new Span for the HTTP
-// request and sending the Span in the HTTP request headers.
-// Compare to http.Client.Do.
-func TraceRequest(ctx context.Context, cl Client, req *http.Request) (
+func traceRequest(s *monkit.Span, cl Client, req *http.Request) (
 	resp *http.Response, err error) {
-	defer httpclient.TaskNamed(req.Method)(&ctx)(&err)
-	s := monkit.SpanFromCtx(ctx)
 	s.Annotate("http.uri", req.URL.String())
 	RequestFromSpan(s).SetHeader(req.Header)
 	resp, err = cl.Do(req)
@@ -49,23 +41,6 @@ func TraceRequest(ctx context.Context, cl Client, req *http.Request) (
 	}
 	s.Annotate("http.responsecode", fmt.Sprint(resp.StatusCode))
 	return resp, nil
-}
-
-// server stuff -----
-
-// TraceHandler wraps a ContextHTTPHandler with a Span pulled from incoming
-// requests, possibly starting new Traces if necessary.
-func TraceHandler(c ContextHTTPHandler) ContextHTTPHandler {
-	return ContextHTTPHandlerFunc(func(
-		ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		trace, spanId := RequestFromHeader(r.Header).Trace()
-		defer httpserver.FuncNamed(r.Method).RemoteTrace(&ctx, spanId, trace)(nil)
-		s := monkit.SpanFromCtx(ctx)
-		s.Annotate("http.uri", r.RequestURI)
-		wrapped := &responseWriterObserver{w: w}
-		c.ServeHTTP(ctx, wrapped, r)
-		s.Annotate("http.responsecode", fmt.Sprint(wrapped.StatusCode()))
-	})
 }
 
 type responseWriterObserver struct {
@@ -97,25 +72,6 @@ func (w *responseWriterObserver) StatusCode() int {
 	return *w.sc
 }
 
-// ContextHTTPHandler is like http.Handler, but expects a Context object
-// as the first parameter.
-type ContextHTTPHandler interface {
-	ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request)
-}
-
-// ContextHTTPHandlerFunc is like http.HandlerFunc but for ContextHTTPHandlers
-type ContextHTTPHandlerFunc func(
-	ctx context.Context, w http.ResponseWriter, r *http.Request)
-
-func (f ContextHTTPHandlerFunc) ServeHTTP(ctx context.Context,
-	w http.ResponseWriter, r *http.Request) {
-	f(ctx, w, r)
-}
-
-// ContextWrapper will turn a ContextHTTPHandler into an http.Handler by
-// passing a new Context into every request.
-func ContextWrapper(h ContextHTTPHandler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.ServeHTTP(context.Background(), w, r)
-	})
-}
+//go:generate sh -c "m4 -D_STDLIB_IMPORT_='\"context\"' -D_OTHER_IMPORT_= -D_BUILD_TAG_='// +build go1.7' httpctxgen.go.m4 > httpctx17.go"
+//go:generate sh -c "m4 -D_STDLIB_IMPORT_= -D_OTHER_IMPORT_='\"golang.org/x/net/context\"' -D_BUILD_TAG_='// +build !go1.7' httpctxgen.go.m4 > httpxctx.go"
+//go:generate gofmt -w -s httpctx17.go httpxctx.go
