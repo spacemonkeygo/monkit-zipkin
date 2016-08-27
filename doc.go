@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* Package zipkin provides a monkit plugin for sending traces to Zipkin.
+/*
+Package zipkin provides a monkit plugin for sending traces to Zipkin.
 
 Example usage
 
