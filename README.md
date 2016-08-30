@@ -48,7 +48,7 @@ func HandleRequest(ctx context.Context, w http.ResponseWriter,
 func DoTheThing(ctx context.Context) (err error) {
   defer mon.Task()(&ctx)(&err)
   return http.Serve(listener, zipkin.ContextWrapper(
-    zipkin.ContextHTTPHandlerFunc(HandleRequest)))
+    zipkin.TraceHandler(zipkin.ContextHTTPHandlerFunc(HandleRequest))))
 }
 ```
 
