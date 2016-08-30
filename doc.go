@@ -55,7 +55,7 @@ Context info from the Request. That's easy to do with zipkin.ContextWrapper.
   func DoTheThing(ctx context.Context) (err error) {
     defer mon.Task()(&ctx)(&err)
     return http.Serve(listener, zipkin.ContextWrapper(
-      zipkin.ContextHTTPHandlerFunc(HandleRequest)))
+      zipkin.TraceHandler(zipkin.ContextHTTPHandlerFunc(HandleRequest))))
   }
 
 Last, your outbound HTTP requests need to pass through Context info:
