@@ -12,24 +12,25 @@ Your main method gets set up something like this:
 package main
 
 import (
-  "net/http"
+	"net/http"
 
-  "gopkg.in/spacemonkeygo/monkit.v2"
-  "gopkg.in/spacemonkeygo/monkit.v2/environment"
-  "gopkg.in/spacemonkeygo/monkit.v2/present"
-  "gopkg.in/spacemonkeygo/monkit-zipkin.v2"
+	"gopkg.in/spacemonkeygo/monkit-zipkin.v2"
+	"gopkg.in/spacemonkeygo/monkit.v2"
+	"gopkg.in/spacemonkeygo/monkit.v2/environment"
+	"gopkg.in/spacemonkeygo/monkit.v2/present"
 )
 
 func main() {
-  environment.Register(monkit.Default)
-  go http.ListenAndServe("localhost:9000", present.HTTP(monkit.Default))
-  collector, err := zipkin.NewScribeCollector("zipkin.whatever:9042")
-  if err != nil {
-    panic(err)
-  }
-  zipkin.RegisterZipkin(monkit.Default, collector, zipkin.Options{})
+	environment.Register(monkit.Default)
+	go http.ListenAndServe("localhost:9000", present.HTTP(monkit.Default))
+	collector, err := zipkin.NewScribeCollector("zipkin.whatever:9042")
+	if err != nil {
+		panic(err)
+	}
+	zipkin.RegisterZipkin(monkit.Default, collector, zipkin.Options{
+		Fraction: 1})
 
-  ...
+	...
 }
 ```
 
