@@ -43,7 +43,13 @@ type HeaderSetter interface {
 // RequestFromHeader will create a Request object given an http.Header or
 // anything that matches the HeaderGetter interface.
 func RequestFromHeader(header HeaderGetter) (rv Request) {
-	trace_id, err := fromHeader(header.Get("X-B3-TraceId"))
+	// Tolerate 128bit traceIDs.
+	// SEE: https://github.com/openzipkin/b3-propagation/issues/6
+	b3TraceID := header.Get("X-B3-TraceId")
+	if len(b3TraceID) > 16 {
+		b3TraceID = b3TraceID[len(b3TraceID)-16:]
+	}
+	trace_id, err := fromHeader(b3TraceID)
 	if err == nil {
 		rv.TraceId = &trace_id
 	}
