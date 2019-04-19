@@ -18,7 +18,7 @@ import (
 	"log"
 	"net"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/apache/thrift/lib/go/thrift"
 	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
 )
 

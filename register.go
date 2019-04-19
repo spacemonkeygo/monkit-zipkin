@@ -20,7 +20,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
-	"gopkg.in/spacemonkeygo/monkit.v2"
+	monkit "gopkg.in/spacemonkeygo/monkit.v2"
 )
 
 type traceKey int
@@ -89,10 +89,10 @@ func (opts Options) observeSpan(s *monkit.Span, err error, panicked bool,
 	finish time.Time) {
 	parent_id, server := getParentId(s)
 	zs := &zipkin.Span{
-		TraceId:  s.Trace().Id(),
+		TraceID:  s.Trace().Id(),
 		Name:     s.Func().FullName(),
-		Id:       s.Id(),
-		ParentId: parent_id,
+		ID:       s.Id(),
+		ParentID: parent_id,
 	}
 
 	start_name := zipkin.CLIENT_SEND

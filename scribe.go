@@ -15,13 +15,14 @@
 package zipkin
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"log"
 	"net"
 	"time"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/apache/thrift/lib/go/thrift"
 	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/scribe"
 	"gopkg.in/spacemonkeygo/monkit-zipkin.v2/gen-go/zipkin"
 )
@@ -49,7 +50,7 @@ func NewScribeCollector(scribe_addr string) (*ScribeCollector, error) {
 		logs: make(chan *scribe.LogEntry, 100),
 	}
 
-	go s.pumpWrites()
+	go s.pumpWrites(context.Background())
 
 	return &s, nil
 }
@@ -59,7 +60,7 @@ func NewScribeCollector(scribe_addr string) (*ScribeCollector, error) {
 // backs off on consecutive connection errors.
 //
 // When a write error occurs, pumpWrites will lose that log entry.
-func (s *ScribeCollector) pumpWrites() {
+func (s *ScribeCollector) pumpWrites(ctx context.Context) {
 	var backoff int
 
 	for {
@@ -76,7 +77,7 @@ func (s *ScribeCollector) pumpWrites() {
 			continue
 		}
 
-		err = writeAll(conn, s.logs, s.done)
+		err = writeAll(ctx, conn, s.logs, s.done)
 		if err != nil {
 			log.Printf("write error: %s", err)
 		}
@@ -86,12 +87,12 @@ func (s *ScribeCollector) pumpWrites() {
 }
 
 // writeAll sends all logs to c, stopping when done is signaled.
-func writeAll(c *scribeConn, logs <-chan *scribe.LogEntry,
+func writeAll(ctx context.Context, c *scribeConn, logs <-chan *scribe.LogEntry,
 	done <-chan struct{}) error {
 	for {
 		select {
 		case l := <-logs:
-			rc, err := c.client.Log([]*scribe.LogEntry{l})
+			rc, err := c.client.Log(ctx, []*scribe.LogEntry{l})
 			if err != nil {
 				return err
 			}
